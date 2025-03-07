@@ -52,14 +52,14 @@ fun BookingScreen(viewModel: BookingViewModel) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // 显示剩余时间
-            remainingTime?.let { time ->
-                Text(
-                    text = "剩余有效时间: ${formatTime(time)}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+//            // 显示剩余时间
+//            remainingTime?.let { time ->
+//                Text(
+//                    text = "剩余有效时间: ${formatTime(time)}",
+//                    style = MaterialTheme.typography.titleMedium
+//                )
+//                Spacer(modifier = Modifier.height(16.dp))
+//            }
 
             when (uiState) {
                 is BookingUiState.Success -> {
