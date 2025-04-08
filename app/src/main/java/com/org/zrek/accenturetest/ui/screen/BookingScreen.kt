@@ -1,6 +1,11 @@
 @file:OptIn(ExperimentalMaterialApi::class)
 
 package com.org.zrek.accenturetest.ui.screen
+
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import com.org.zrek.accenturetest.ui.viewmodel.BookingUiState
 import com.org.zrek.accenturetest.ui.viewmodel.BookingViewModel
 import androidx.compose.foundation.layout.*
@@ -19,6 +24,11 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ListItemDefaults.containerColor
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.coerceAtLeast
 import com.org.zrek.accenturetest.model.BookingResponse
 import com.org.zrek.accenturetest.model.Segment
 import java.io.IOException
@@ -36,9 +46,9 @@ fun BookingScreen(viewModel: BookingViewModel) {
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
-        onRefresh = { 
+        onRefresh = {
             Logger.d("Pull refresh triggered")
-            viewModel.refresh() 
+            viewModel.refresh()
         }
     )
 
@@ -52,32 +62,26 @@ fun BookingScreen(viewModel: BookingViewModel) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-//            // 显示剩余时间
-//            remainingTime?.let { time ->
-//                Text(
-//                    text = "剩余有效时间: ${formatTime(time)}",
-//                    style = MaterialTheme.typography.titleMedium
-//                )
-//                Spacer(modifier = Modifier.height(16.dp))
-//            }
 
             when (uiState) {
                 is BookingUiState.Success -> {
                     val booking = (uiState as BookingUiState.Success).booking
                     // 基本信息部分
                     BookingBasicInfo(booking)
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // 航段列表部分
                     SegmentsList(segments = booking.segments)
                 }
+
                 is BookingUiState.Error -> {
                     ErrorContent(
                         exception = (uiState as BookingUiState.Error).exception,
                         onRetry = { viewModel.retry() }
                     )
                 }
+
                 BookingUiState.Loading -> {
                     LoadingContent()
                 }
@@ -102,7 +106,7 @@ fun BookingBasicInfo(booking: BookingResponse) {
             style = MaterialTheme.typography.headlineSmall
         )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // 基本信息
         Text("船舶参考号: ${booking.shipReference}")
         Text("船票状态: ${if (booking.canIssueTicketChecking) "可出票" else "不可出票"}")
@@ -117,7 +121,7 @@ fun SegmentsList(segments: List<Segment>) {
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         LazyColumn {
             items(segments) { segment ->
                 SegmentItem(segment)
@@ -132,12 +136,29 @@ fun SegmentItem(segment: Segment) {
     Card(
         modifier = Modifier.fillMaxWidth(),
     ) {
+        ItemContent(segment)
+    }
+}
+
+@Composable
+fun ItemContent(segment: Segment) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val extraPadding by animateDpAsState(
+        if (expanded) 48.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+    Surface(color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(16.dp),
+        onClick = {expanded = !expanded}) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(bottom = extraPadding.coerceAtLeast(0.dp))
         ) {
             Text("航段 ${segment.id}")
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -153,10 +174,10 @@ fun SegmentItem(segment: Segment) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 // 箭头
                 Text("→")
-                
+
                 // 目的地信息
                 Column {
                     Text(
@@ -168,6 +189,7 @@ fun SegmentItem(segment: Segment) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+
             }
         }
     }
